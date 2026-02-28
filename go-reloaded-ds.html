@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>go-reloaded · Data Structures</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --panel: #111827;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --accent3: #7fff6b;
+    --accent4: #c77dff;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --highlight: #1a2540;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 40px 20px;
+    background-image: radial-gradient(ellipse at 20% 20%, #0d1f3c 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 80%, #1a0d2e 0%, transparent 60%);
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+    animation: fadeDown 0.6s ease;
+  }
+
+  header .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  header h1 {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent4));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  header p {
+    color: var(--muted);
+    margin-top: 10px;
+    font-size: 15px;
+  }
+
+  .pipeline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 52px;
+    flex-wrap: wrap;
+    animation: fadeUp 0.7s ease 0.1s both;
+  }
+
+  .pipe-step {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    position: relative;
+    transition: transform 0.2s, border-color 0.2s;
+    cursor: default;
+  }
+
+  .pipe-step:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+  }
+
+  .pipe-step .label {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .pipe-arrow {
+    color: var(--muted);
+    font-size: 20px;
+  }
+
+  .section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    padding-left: 4px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    max-width: 1100px;
+    margin: 0 auto 48px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.6s ease both;
+    transition: transform 0.25s, box-shadow 0.25s;
+    cursor: pointer;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .card.slice::before { background: var(--accent); }
+  .card.map::before { background: var(--accent2); }
+  .card.struct::before { background: var(--accent4); }
+  .card.extra::before { background: var(--accent3); }
+
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .card-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .card.slice .card-icon { background: rgba(0,212,255,0.15); }
+  .card.map .card-icon { background: rgba(255,107,53,0.15); }
+  .card.struct .card-icon { background: rgba(199,125,255,0.15); }
+  .card.extra .card-icon { background: rgba(127,255,107,0.15); }
+
+  .card-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .card.slice .card-badge { background: rgba(0,212,255,0.15); color: var(--accent); }
+  .card.map .card-badge { background: rgba(255,107,53,0.15); color: var(--accent2); }
+  .card.struct .card-badge { background: rgba(199,125,255,0.15); color: var(--accent4); }
+  .card.extra .card-badge { background: rgba(127,255,107,0.15); color: var(--accent3); }
+
+  .card h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .card.slice h2 { color: var(--accent); }
+  .card.map h2 { color: var(--accent2); }
+  .card.struct h2 { color: var(--accent4); }
+  .card.extra h2 { color: var(--accent3); }
+
+  .card p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .code-block {
+    background: #070c18;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    overflow-x: auto;
+  }
+
+  .kw { color: #ff79c6; }
+  .ty { color: var(--accent); }
+  .field { color: #f8f8f2; }
+  .val { color: var(--accent3); }
+  .str { color: var(--accent2); }
+  .cm { color: #6272a4; }
+
+  .used-for {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .used-for span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--highlight);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  /* detail panel */
+  .detail-panel {
+    max-width: 1100px;
+    margin: 0 auto 48px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    display: none;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .detail-panel.visible { display: block; }
+
+  .detail-header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .detail-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .close-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .close-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .detail-body {
+    padding: 28px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  @media (max-width: 600px) {
+    .detail-body { grid-template-columns: 1fr; }
+  }
+
+  .detail-body h4 {
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  .detail-body ul {
+    list-style: none;
+  }
+
+  .detail-body ul li {
+    font-size: 13px;
+    color: var(--text);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    line-height: 1.5;
+  }
+
+  .detail-body ul li::before {
+    content: '→';
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* flow diagram */
+  .flow {
+    max-width: 1100px;
+    margin: 0 auto 48px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    animation: fadeUp 0.8s ease 0.3s both;
+  }
+
+  .flow-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+
+  .flow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .flow-row {
+    display: flex;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .flow-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 20px;
+    flex-shrink: 0;
+  }
+
+  .flow-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: var(--bg);
+    flex-shrink: 0;
+    margin-top: 18px;
+  }
+
+  .flow-line {
+    width: 2px;
+    flex: 1;
+    background: var(--border);
+    margin: 2px 0;
+  }
+
+  .flow-box {
+    flex: 1;
+    background: var(--highlight);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 4px;
+    transition: border-color 0.2s;
+  }
+
+  .flow-box:hover { border-color: var(--accent); }
+
+  .flow-box .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+
+  .flow-box .step-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .flow-box .step-ds {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent4);
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 24px;
+    animation: fadeUp 0.6s ease 0.2s both;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">go-reloaded · data structures guide</div>
+  <h1>Designing Your Data Structures</h1>
+  <p>A beginner-friendly map of every structure you'll need — click any card to explore</p>
+</header>
+
+<div class="pipeline">
+  <div class="pipe-step"><span class="label">input</span>sample.txt</div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step"><span class="label">step 1</span>Read & Split</div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step"><span class="label">step 2</span>Apply Rules</div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step"><span class="label">step 3</span>Fix Punctuation</div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step"><span class="label">output</span>result.txt</div>
+</div>
+
+<p class="hint">// click a card to see how it's used in the project</p>
+
+<div class="grid" style="max-width:1100px;margin:0 auto 24px;">
+
+  <div class="card slice" style="animation-delay:0.1s" onclick="showDetail('slice')">
+    <div class="card-header">
+      <div class="card-icon">🗂</div>
+      <span class="card-badge">[]string</span>
+    </div>
+    <h2>String Slice</h2>
+    <p>An ordered list of words. You'll split the input text into a slice of tokens, process each one, then join them back together.</p>
+    <div class="code-block">
+<span class="cm">// Split input into words</span>
+<span class="kw">words</span> := strings.Fields(input)
+<span class="cm">// words = ["it", "(cap)", "was", ...]</span>
+
+<span class="cm">// Access by index</span>
+word := words[<span class="val">0</span>]  <span class="cm">// "it"</span>
+    </div>
+    <div class="used-for">
+      <span>tokenizing text</span>
+      <span>looping words</span>
+      <span>building output</span>
+    </div>
+  </div>
+
+  <div class="card map" style="animation-delay:0.2s" onclick="showDetail('map')">
+    <div class="card-header">
+      <div class="card-icon">🗺</div>
+      <span class="card-badge">map[string]func</span>
+    </div>
+    <h2>Map of Transforms</h2>
+    <p>A lookup table that maps a tag like <code style="color:var(--accent2)">"(up)"</code> to the function that handles it. Clean and extensible.</p>
+    <div class="code-block">
+<span class="kw">transforms</span> := <span class="kw">map</span>[<span class="ty">string</span>]<span class="ty">func</span>(<span class="ty">string</span>) <span class="ty">string</span>{
+  <span class="str">"(up)"</span>:  strings.ToUpper,
+  <span class="str">"(low)"</span>: strings.ToLower,
+  <span class="str">"(cap)"</span>: toCapitalized,
+}
+    </div>
+    <div class="used-for">
+      <span>(up) (low) (cap)</span>
+      <span>fast lookup</span>
+      <span>rule dispatch</span>
+    </div>
+  </div>
+
+  <div class="card struct" style="animation-delay:0.3s" onclick="showDetail('struct')">
+    <div class="card-header">
+      <div class="card-icon">📦</div>
+      <span class="card-badge">struct</span>
+    </div>
+    <h2>Token Struct</h2>
+    <p>Wraps each word with extra info: is it a tag? How many words should it affect? Keeps your logic tidy.</p>
+    <div class="code-block">
+<span class="kw">type</span> <span class="ty">Token</span> <span class="kw">struct</span> {
+  <span class="field">Value</span>   <span class="ty">string</span>
+  <span class="field">IsTag</span>   <span class="ty">bool</span>
+  <span class="field">TagName</span> <span class="ty">string</span>  <span class="cm">// "up","low"…</span>
+  <span class="field">Count</span>   <span class="ty">int</span>     <span class="cm">// e.g. 2 in (up,2)</span>
+}
+    </div>
+    <div class="used-for">
+      <span>tag detection</span>
+      <span>(up, 3) support</span>
+      <span>clean iteration</span>
+    </div>
+  </div>
+
+  <div class="card extra" style="animation-delay:0.4s" onclick="showDetail('extra')">
+    <div class="card-header">
+      <div class="card-icon">🔤</div>
+      <span class="card-badge">[]rune / string</span>
+    </div>
+    <h2>Rune Slice</h2>
+    <p>For punctuation fixing and quote handling, you'll sometimes need to work character-by-character. A rune slice is Go's way to do that safely.</p>
+    <div class="code-block">
+<span class="cm">// Safely iterate characters</span>
+<span class="kw">runes</span> := []<span class="ty">rune</span>(text)
+<span class="kw">for</span> i, ch := <span class="kw">range</span> runes {
+  <span class="cm">// ch is one character</span>
+}
+    </div>
+    <div class="used-for">
+      <span>punctuation fixing</span>
+      <span>quote trimming</span>
+      <span>a → an rule</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Detail Panel -->
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-header">
+    <h3 id="detail-title">Details</h3>
+    <button class="close-btn" onclick="closeDetail()">✕ close</button>
+  </div>
+  <div class="detail-body" id="detail-body"></div>
+</div>
+
+<!-- Flow Diagram -->
+<div class="flow">
+  <div class="flow-title">// how data flows through your program</div>
+  <div class="flow-steps">
+
+    <div class="flow-row">
+      <div class="flow-connector"><div class="flow-dot"></div><div class="flow-line"></div></div>
+      <div class="flow-box">
+        <div class="step-num">STEP 01</div>
+        <div class="step-title">Read the file into a string</div>
+        <div class="step-ds">string → os.ReadFile(filename)</div>
+      </div>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-connector"><div class="flow-dot"></div><div class="flow-line"></div></div>
+      <div class="flow-box">
+        <div class="step-num">STEP 02</div>
+        <div class="step-title">Split string into a []Token slice</div>
+        <div class="step-ds">[]Token — detect tags like (up), (hex), (bin)</div>
+      </div>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-connector"><div class="flow-dot"></div><div class="flow-line"></div></div>
+      <div class="flow-box">
+        <div class="step-num">STEP 03</div>
+        <div class="step-title">Walk the slice, apply transforms</div>
+        <div class="step-ds">map[string]func — look up tag → apply to previous word(s)</div>
+      </div>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-connector"><div class="flow-dot"></div><div class="flow-line"></div></div>
+      <div class="flow-box">
+        <div class="step-num">STEP 04</div>
+        <div class="step-title">Fix punctuation & quotes</div>
+        <div class="step-ds">[]rune / regex — character-level cleanup pass</div>
+      </div>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-connector"><div class="flow-dot"></div></div>
+      <div class="flow-box">
+        <div class="step-num">STEP 05</div>
+        <div class="step-title">Join tokens → write to output file</div>
+        <div class="step-ds">strings.Join(words, " ") → os.WriteFile(filename)</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const details = {
+  slice: {
+    title: '[]string / []Token — The Slice',
+    why: [
+      'Text is naturally a sequence, and slices model sequences perfectly',
+      'You can loop over words with range, access words by index, and insert/remove easily',
+      'strings.Fields() splits on any whitespace — perfect for tokenizing your input',
+      'After transforms, strings.Join() collapses it back into a sentence'
+    ],
+    tips: [
+      'Use words[i-1] to get the word just before a tag like (up)',
+      'Modify words in-place inside the loop — Go slices are mutable',
+      'A slice of Token structs is better than a plain []string once you add tags',
+      'Keep a separate result []string to build output without mutating the original'
+    ]
+  },
+  map: {
+    title: 'map[string]func — The Transform Map',
+    why: [
+      'Maps give you O(1) lookup — checking if a word is a tag is instant',
+      'Avoids long if-else chains: just do transforms[tag](word)',
+      'Adding a new rule later is as simple as adding one map entry',
+      'You can store functions as values in Go — this is a key Go idiom'
+    ],
+    tips: [
+      'Check if a key exists: fn, ok := transforms[word]; if ok { ... }',
+      'For tags with numbers like (up, 3) parse the number out first, then look up "up"',
+      'Use a second map for number conversions: hex → decimal, bin → decimal',
+      'Keep your transform map at the top of main() or as a package-level var'
+    ]
+  },
+  struct: {
+    title: 'Token struct — Wrapping Each Word',
+    why: [
+      'A plain string can only hold the word itself — a struct holds context too',
+      'Knowing if a token is a tag lets you skip it when building output',
+      'Storing Count (from e.g. "up, 3") right on the token keeps logic simple',
+      'Structs make your code self-documenting — Token.IsTag is clearer than a boolean slice'
+    ],
+    tips: [
+      'Parse tags with a regex or strings.TrimPrefix to fill IsTag, TagName, Count',
+      'A tag token should NOT appear in the final output — check IsTag before joining',
+      'You can add a Processed bool field to mark words already transformed',
+      'Keep the struct small — only add fields you actually need'
+    ]
+  },
+  extra: {
+    title: '[]rune — Character-Level Work',
+    why: [
+      'Go strings are byte arrays — iterating with range gives you runes (Unicode chars) safely',
+      'Punctuation rules need you to look at individual characters and their neighbors',
+      'Quote handling requires finding the first and last quote and trimming spaces inside',
+      '"a" → "an" rule needs to peek at the first character of the next word'
+    ],
+    tips: [
+      'Use strings.ContainsRune() or a vowel set: map[rune]bool{\'a\':true, \'e\':true, ...}',
+      'For punctuation, consider a regex pass with regexp.MustCompile after word transforms',
+      'strings.TrimSpace() on the word between quotes handles the quote rule neatly',
+      'Process punctuation in a final pass AFTER all word-level transforms are done'
+    ]
+  }
+};
+
+function showDetail(key) {
+  const d = details[key];
+  const panel = document.getElementById('detail-panel');
+  document.getElementById('detail-title').textContent = d.title;
+  document.getElementById('detail-body').innerHTML = `
+    <div>
+      <h4>// why use this structure</h4>
+      <ul>${d.why.map(w => `<li>${w}</li>`).join('')}</ul>
+    </div>
+    <div>
+      <h4>// practical tips for this project</h4>
+      <ul>${d.tips.map(t => `<li>${t}</li>`).join('')}</ul>
+    </div>
+  `;
+  panel.classList.add('visible');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.remove('visible');
+}
+</script>
+</body>
+</html>
