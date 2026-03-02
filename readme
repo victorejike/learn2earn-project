@@ -1,0 +1,143 @@
+📖 Overview
+## 📸 Project Overview
+
+
+<p align="center">
+  <img src="assets/overview.png" width="900">assets/overview.png <img/>
+</p>
+
+
+GO-RELOADED is a command-line text processor written in Go.
+It reads an input file, applies transformation rules and formatting logic, then writes the processed output into a new file.
+
+This project demonstrates:
+
+Advanced string manipulation
+
+Regular expression parsing
+
+Token processing
+
+Slice mutation logic
+
+CLI file handling
+
+Unit testing in Go
+
+Clean modular architecture
+
+✨ Features
+🔤 Text Case Modifiers
+Modifier	Description	Example
+(up)	Uppercase previous word	hello (up) → HELLO
+(low)	Lowercase previous word	HELLO (low) → hello
+(cap)	Capitalize previous word	hello (cap) → Hello
+(cap, N)	Capitalize previous N words	(cap, 6)
+🔢 Numeric Conversions
+Modifier	Description
+(hex)	Converts previous hexadecimal number to decimal
+(bin)	Converts previous binary number to decimal
+
+Example:
+
+Simply add 42 (hex) and 10 (bin)
+
+Output:
+
+Simply add 66 and 2
+🧠 Grammar & Formatting Engine
+
+✔ Article correction (a → an)
+✔ Proper punctuation spacing
+✔ Ellipsis handling (...)
+✔ Quote normalization (' text ' → 'text')
+✔ Smart tokenization preserving modifiers
+
+📂 Project Architecture
+go-reloaded/
+│
+├── go.mod
+├── main.go
+├── processor.go
+├── utils.go
+└── processor_test.go
+🔹 main.go
+
+Handles CLI arguments and file I/O.
+
+🔹 processor.go
+
+Core transformation engine.
+
+🔹 utils.go
+
+Helper utilities (token removal, capitalization, vowel detection).
+
+🔹 processor_test.go
+
+Unit tests validating all functionality.
+
+▶️ Usage
+Run the program
+go run . input.txt output.txt
+Run tests
+go test
+
+Expected output:
+
+PASS
+ok      github.com/GO-RELOADED
+📸 Screenshots
+✅ Test Suite Passing
+
+Add your screenshot to:
+
+/assets/tests.png
+
+Then keep this in README:
+
+![Tests Passing](assets/tests.png)
+💻 CLI Execution Example
+
+Add screenshot:
+
+/assets/run.png
+
+Then:
+
+![CLI Execution](assets/run.png)
+🧪 Example
+Input (sample.txt)
+it was the age of foolishness (cap, 6) , and simply add 42 (hex)
+Output
+It Was The Age Of Foolishness, and simply add 66
+🏗 Engineering Highlights
+
+This project demonstrates strong understanding of:
+
+Go slices and mutation patterns
+
+Regex-based parsing strategies
+
+Stateful token processing
+
+CLI application architecture
+
+Unit-driven development
+
+Clean separation of concerns
+
+The punctuation engine was carefully designed to properly handle ellipsis without corrupting token spacing — a common edge case in text processors.
+
+👨‍💻 Author
+Victor Ejike
+
+Software Engineer
+
+Focused on building clean, reliable systems with strong architectural foundations.
+
+📌 Status
+
+✅ Fully implemented
+✅ All tests passing
+✅ Production-ready CLI structure

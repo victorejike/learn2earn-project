@@ -8,8 +8,9 @@ import (
 
 func Process(text string) string {
 	text = strings.ReplaceAll(text, "\n", " ")
-	tokens := tokenize(text)
 
+	// Split text but keep modifiers and quotes as single tokens
+	tokens := smartTokenize(text)
 	tokens = applyModifiers(tokens)
 	tokens = fixArticles(tokens)
 
@@ -20,8 +21,10 @@ func Process(text string) string {
 	return strings.TrimSpace(result)
 }
 
-func tokenize(text string) []string {
-	return strings.Fields(text)
+// Smart tokenizer: keeps (cap,6), (up,2), (low,3) and quoted text as single tokens
+func smartTokenize(text string) []string {
+	re := regexp.MustCompile(`\([a-z]+(,\s*\d+)?\)|'[^']*'|[^\s]+`)
+	return re.FindAllString(text, -1)
 }
 
 func applyModifiers(tokens []string) []string {
@@ -35,6 +38,7 @@ func applyModifiers(tokens []string) []string {
 			}
 			tokens = removeToken(tokens, i)
 			i--
+			continue
 		}
 
 		if token == "(bin)" && i > 0 {
@@ -44,13 +48,14 @@ func applyModifiers(tokens []string) []string {
 			}
 			tokens = removeToken(tokens, i)
 			i--
+			continue
 		}
 
-		if strings.HasPrefix(token, "(up") ||
-			strings.HasPrefix(token, "(low") ||
-			strings.HasPrefix(token, "(cap") {
-
+		if strings.HasPrefix(token, "(") {
 			cmd, count := parseModifier(token)
+			if cmd == "" {
+				continue
+			}
 
 			start := i - count
 			if start < 0 {
@@ -72,17 +77,19 @@ func applyModifiers(tokens []string) []string {
 			i--
 		}
 	}
+
 	return tokens
 }
 
 func parseModifier(token string) (string, int) {
-	re := regexp.MustCompile(`\((up|low|cap)(,\s*(\d+))?\)`)
+	re := regexp.MustCompile(`^\((up|low|cap)(,\s*(\d+))?\)$`)
 	matches := re.FindStringSubmatch(token)
 	if len(matches) == 0 {
 		return "", 1
 	}
 
 	cmd := matches[1]
+
 	if matches[3] != "" {
 		n, _ := strconv.Atoi(matches[3])
 		return cmd, n
@@ -95,7 +102,6 @@ func fixArticles(tokens []string) []string {
 	for i := 0; i < len(tokens)-1; i++ {
 		word := tokens[i]
 		next := strings.ToLower(tokens[i+1])
-
 		if strings.ToLower(word) == "a" && startsWithVowelOrH(next) {
 			if word == "A" {
 				tokens[i] = "An"
@@ -107,15 +113,19 @@ func fixArticles(tokens []string) []string {
 	return tokens
 }
 
+// Fixed punctuation handling
 func fixPunctuation(text string) string {
+	// 1. Ellipsis and special groups first
+	reEllipsis := regexp.MustCompile(`\s*(\.\.\.|!\?|!!|\?\!)\s*`)
+	text = reEllipsis.ReplaceAllString(text, "$1")
+
+	// 2. Remove space before punctuation
 	reBefore := regexp.MustCompile(`\s+([.,!?;:])`)
 	text = reBefore.ReplaceAllString(text, "$1")
 
-	reAfter := regexp.MustCompile(`([.,!?;:])([^\s])`)
+	// 3. Add space after punctuation if missing (except for dots in ellipsis)
+	reAfter := regexp.MustCompile(`([.,!?;:])([^\s.])`)
 	text = reAfter.ReplaceAllString(text, "$1 $2")
-
-	reDots := regexp.MustCompile(`\s*(\.\.\.|!\?|!!|\?\!)\s*`)
-	text = reDots.ReplaceAllString(text, "$1 ")
 
 	return strings.TrimSpace(text)
 }

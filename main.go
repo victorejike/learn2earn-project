@@ -2,28 +2,31 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 )
 
 func main() {
-	if len(os.Args) != 3 {
-		fmt.Println("Usage: go run . input.txt output.txt")
+	if len(os.Args) < 3 {
+		fmt.Println("Usage: go run . <input file> <output file>")
 		return
 	}
 
 	inputFile := os.Args[1]
 	outputFile := os.Args[2]
 
-	data, err := os.ReadFile(inputFile)
+	data, err := ioutil.ReadFile(inputFile)
 	if err != nil {
-		fmt.Println("Error reading input file:", err)
+		fmt.Printf("Error reading input file: %v\n", err)
 		return
 	}
 
-	result := Process(string(data))
+	text := string(data)
+	result := Process(text)
 
-	err = os.WriteFile(outputFile, []byte(result), 0644)
+	err = ioutil.WriteFile(outputFile, []byte(result), 0644)
 	if err != nil {
-		fmt.Println("Error writing output file:", err)
+		fmt.Printf("Error writing output file: %v\n", err)
+		return
 	}
 }

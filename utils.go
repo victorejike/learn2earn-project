@@ -18,10 +18,5 @@ func startsWithVowelOrH(word string) bool {
 		return false
 	}
 	first := strings.ToLower(string(word[0]))
-	return first == "a" ||
-		first == "e" ||
-		first == "i" ||
-		first == "o" ||
-		first == "u" ||
-		first == "h"
+	return first == "a" || first == "e" || first == "i" || first == "o" || first == "u" || first == "h"
 }
